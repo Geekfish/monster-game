@@ -1,0 +1,4 @@
+Mo south=Amasna east=Dodala west=Anodago
+Mu north=Amasna south=E east=Eludisnismu west=Mudaxu
+Anu north=Aluligige west=Dolamisme
+Mesmina north=Esmusno south=Dixusno west=Dusmu
