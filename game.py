@@ -5,6 +5,7 @@ class Game(object):
     city_regex = re.compile("^(?P<city_name>\w+)( (north=)(?P<north>\w+))?" +
             "( (south=)(?P<south>\w+))?( (east=)(?P<east>\w+))?( (west=)(?P<west>\w+))?")
 
+
     class City(object):
         def __init__(self, attr_dict):
             self.name = attr_dict['city_name']
@@ -15,6 +16,7 @@ class Game(object):
 
         def __str__(self):
             return self.name
+
 
     def _get_world_file_data(self):
         f = open(self.DATA_FILE, 'r')
@@ -31,7 +33,6 @@ class Game(object):
         lines = self._get_world_file_data()
         self.cities = [self._create_city(line) for line in lines]
 
-        print self.cities
 
 if __name__ == '__main__':
     game = Game()

@@ -29,6 +29,10 @@ class TestGameFunctions(unittest.TestCase):
         assert_that(city2.north, is_(none()))
 
     def test_populate_map(self):
+        game = Game()
+        game.populate_map()
+
+        assert_that(len(game.cities), is_(4))
 
 
 if __name__ == '__main__':
