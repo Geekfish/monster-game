@@ -24,15 +24,21 @@ class TestGameFunctions(unittest.TestCase):
         city2 = game._create_city('Fizzbuzz south=Is east=Easier')
 
         assert_that(city1.name, is_('Hello'))
-        assert_that(city1.south, is_('This'))
-        assert_that(city2.east, is_('Easier'))
-        assert_that(city2.north, is_(none()))
+        assert_that(city1.refs['south'], is_('This'))
+        assert_that(city2.refs['east'], is_('Easier'))
+        assert_that(city2.refs['north'], is_(none()))
 
     def test_populate_map(self):
         game = Game()
         game.populate_map()
 
         assert_that(len(game.cities), is_(4))
+        assert_that(len(game.city_index), is_(4))
+    
+    def test_get_city_regex(self):
+        expected_regex = ("^(?P<city_name>\w+)( (north=)(?P<north>\w+))?" +
+            "( (south=)(?P<south>\w+))?( (east=)(?P<east>\w+))?( (west=)(?P<west>\w+))?")
+        assert_that(Game.City._compose_regex(), is_(expected_regex))
 
 
 if __name__ == '__main__':
