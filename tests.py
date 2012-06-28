@@ -61,7 +61,12 @@ class TestGameFunctions(unittest.TestCase):
         my_city.south = City({'city_name': 'foo'})
         my_city.west = City({'city_name': 'bar'})
 
-        assert_that(my_city.to_output(), 'London south=foo west=bar')
+        city_index = {
+            'foo': my_city.south,
+            'bar': my_city.west,
+            'London': my_city
+        }
+        assert_that(my_city.to_output(city_index), 'London south=foo west=bar')
 
     def test_deploy_monsters(self):
         game = Game()

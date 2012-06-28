@@ -1,9 +1,8 @@
 import re, random, argparse, sys
 
 class Game(object):
-    DATA_FILE = 'data/world_map_small.txt'
+    DEFAULT_DATA_FILE = 'data/world_map_small.txt'
     ROUND_LIMIT = 10000
-    NUM_MONSTERS = 10
 
     class Monster(object):
         def __init__(self, ref, starting_city):
@@ -76,12 +75,13 @@ class Game(object):
             str_occupants = [str(occupant) for occupant in self.occupants]
             return ', '.join(str_occupants[:-1]) + ' and ' + str_occupants[-1]
 
-        def to_output(self):
+        def to_output(self, city_index):
             # generate result output based on the initial input format
             output = self.name
             for direction in self.DIRECTIONS:
                 direction_ref = self.refs[direction]
-                if getattr(self, direction, False) and direction_ref:
+                city = getattr(self, direction, None)
+                if city and city.name in city_index.keys() and direction_ref:
                     output += " %s=%s" % (direction, direction_ref)
             return output
 
@@ -89,12 +89,13 @@ class Game(object):
             return self.name
 
 
-    def __init__(self):
+    def __init__(self, data_file=DEFAULT_DATA_FILE):
+        self.data_file = data_file
         self.city_index = {}
         self.monsters = []
 
     def _get_world_file_data(self):
-        f = open(self.DATA_FILE, 'r')
+        f = open(self.data_file, 'r')
         lines = f.readlines()
         f.close()
         return lines
@@ -124,35 +125,47 @@ class Game(object):
         for i in range(1, num_monsters+1):
             random_city = random.choice(self.cities)
             self.monsters.append(Game.Monster(i, random_city))
-            print '#%d %s' % (i, random_city)
-
 
     def show_result(self):
+        print '==================='
+        print ' Remaining cities  '
+        print '==================='
         for city in self.cities:
-            print city.to_output()
+            print city.to_output(self.city_index)
 
     def check_game_ending_conditions(self):
         if not len(self.monsters):
-            if not len(self.cities):
-                print "Success! All cities have been destroyed!"
+            if not len(self.city_index.keys()):
+                print " *** Success! All cities have been destroyed!"
             else:
-                print "All you monsters have died.Your plans for world domination have been postponed."
+                print " *** All you monsters have died.Your plans for world domination have been postponed."
             return True
         return False
 
 
     def destroy_city(self, city):
-        print "%s has been destroyed by monsters %s" % (city.name, city.get_pretty_occupants())
-        pass
+        print "[turn %d] %s has been destroyed by monsters %s" % (self.current_turn, city.name, city.get_pretty_occupants())
+        for occupant in city.occupants:
+            self.monsters.remove(occupant)
+
+        self.cities.remove(city)
+        del self.city_index[city.name]
 
     def run(self):
         for tick in range(0, self.ROUND_LIMIT):
+            self.current_turn = tick + 1
             if self.check_game_ending_conditions():
                 return
 
             cities_to_destroy = filter(city_condition_filter, self.cities)
             for city in cities_to_destroy:
                 self.destroy_city(city)
+
+            for monster in self.monsters:
+                monster.move()
+
+            if tick == self.ROUND_LIMIT - 1:
+                print " *** Your monsters are all blocked, you might need to rebuild those roads and start again..."
 
 
 # Utils
@@ -165,6 +178,8 @@ if __name__ == '__main__':
     # argument parsing
     parser = argparse.ArgumentParser(description='Evil overlord sends monsters to eat cities')
     parser.add_argument('monsters', action="store", type=int, help="Number of monsters")
+    parser.add_argument("-f", "--datafile", action="store", help="Path to city data file", default=Game.DEFAULT_DATA_FILE)
+
     args = parser.parse_args()
 
     if args.monsters < 2:
@@ -173,7 +188,7 @@ if __name__ == '__main__':
 
 
     # Get set
-    game = Game()
+    game = Game(data_file=args.datafile)
     game.populate_map()
     game.deploy_monsters(args.monsters)
 
