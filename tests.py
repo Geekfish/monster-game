@@ -74,6 +74,81 @@ class TestGameFunctions(unittest.TestCase):
 
         assert_that(total_occupants, is_(10))
 
+    def test_check_game_ending_conditions(self):
+        game = Game()
+
+        game.cities = [1,2,3]
+        game.monsters = []
+        assert_that(game.check_game_ending_conditions(), is_(True))
+
+        game.cities = []
+        game.monsters = []
+        assert_that(game.check_game_ending_conditions(), is_(True))
+
+        game.cities = [1,2,3]
+        game.monsters = [1,]
+        assert_that(game.check_game_ending_conditions(), is_(False))
+
+    def get_city_with_neighbours(self):
+        city1 = Game.City({'city_name': 'A'})
+        city2 = Game.City({'city_name': 'B'})
+        city3 = Game.City({'city_name': 'C'})
+        city4 = Game.City({'city_name': 'D'})
+
+        city1.south = city2
+        city1.north = city3
+        city1.west = city4
+
+        return city1
+
+    def test_available_travel_directions(self):
+        city = self.get_city_with_neighbours()
+        assert_that(city.available_travel_directions, is_(['north', 'south', 'west']))
+
+    def test_monster_move(self):
+        city = self.get_city_with_neighbours()
+        monster = Game.Monster(1, city)
+        previous_city = monster.current_city
+        monster.move()
+
+        assert_that(monster.current_city, is_not(previous_city))
+
+        city = self.get_city_with_neighbours()
+        monster = Game.Monster(1, city)
+
+        previous_city = monster.current_city
+        previous_city.north = None
+        previous_city.south = None
+        previous_city.east = None
+        previous_city.west = None
+
+        monster.move()
+
+        assert_that(monster.current_city, is_(previous_city))
+
+    def test_city_is_overcome(self):
+        city = Game.City({'city_name': 'abc'})
+        monster1 = Game.Monster(1, city)
+        assert_that(not city.is_overcome)
+
+        monster2 = Game.Monster(2, city)
+        assert_that(city.is_overcome)
+
+        monster3 = Game.Monster(3, city)
+        assert_that(city.is_overcome)
+
+    def test_get_pretty_city_occupants(self):
+        city = Game.City({'city_name': 'abc'})
+        monster1 = Game.Monster(1, city)
+        assert_that(city.get_pretty_occupants(), is_('#1'))
+
+        monster2 = Game.Monster(2, city)
+        city.occupants = [monster1, monster2]
+
+        assert_that(city.get_pretty_occupants(), is_('#1 and #2'))
+
+        monster3 = Game.Monster(3, city)
+        assert_that(city.get_pretty_occupants(), is_('#1, #2 and #3'))
 
 if __name__ == '__main__':
     unittest.main()

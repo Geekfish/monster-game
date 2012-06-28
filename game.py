@@ -1,4 +1,4 @@
-import re, random
+import re, random, argparse, sys
 
 class Game(object):
     DATA_FILE = 'data/world_map_small.txt'
@@ -12,11 +12,18 @@ class Game(object):
             self.current_city.occupants.append(self)
 
         def move(self):
-            direction = random.choice(Game.City.DIRECTIONS)
-            pass
+            available_directions = self.current_city.available_travel_directions
+            if available_directions:
+                # if the monster can travel, update the occupants
+                # in both current and destination cities
+                direction = random.choice(available_directions)
+                destination_city = getattr(self.current_city, direction)
+                self.current_city.occupants.remove(self)
+                destination_city.occupants.append(self)
+                self.current_city = destination_city
 
         def __str__(self):
-            return '#' + self.name
+            return '#' + str(self.name)
 
 
     class City(object):
@@ -41,13 +48,36 @@ class Game(object):
                 regex += "( (%s=)(?P<%s>[\-\w]+))?" % (direction, direction)
             return regex
 
+        @property
+        def available_travel_directions(self):
+            # make sure we don't return destroyed cities
+            available_directions = []
+            for direction in self.DIRECTIONS:
+                if getattr(self, direction, None):
+                    available_directions.append(direction)
+            return available_directions
+
+        @property
+        def is_overcome(self):
+            return len(self.occupants) >= 2
+
         def populate_neighbours(self, city_index):
+            # associate neighbour city objects with the current city
             for direction in self.DIRECTIONS:
                 direction_ref = self.refs.get(direction, None)
                 if direction_ref:
                     setattr(self, direction, city_index[direction_ref])
 
+        def get_pretty_occupants(self):
+            if not len(self.occupants):
+                return ''
+            elif len(self.occupants) == 1:
+                return str(self.occupants[0])
+            str_occupants = [str(occupant) for occupant in self.occupants]
+            return ', '.join(str_occupants[:-1]) + ' and ' + str_occupants[-1]
+
         def to_output(self):
+            # generate result output based on the initial input format
             output = self.name
             for direction in self.DIRECTIONS:
                 direction_ref = self.refs[direction]
@@ -60,11 +90,6 @@ class Game(object):
 
 
     def __init__(self):
-        # We're going to keep an index where cities will be removed from
-        # instead of looking up all the neighbours.
-        # With the city object removed using the index, the neighbour association
-        # will also turn into null as it will reference the same object.
-        # The city name will act as the UID.
         self.city_index = {}
         self.monsters = []
 
@@ -75,9 +100,12 @@ class Game(object):
         return lines
 
     def _create_city(self, line):
+        # parse data from file line
         r = self.City.get_input_regex().search(line)
         city_attrs = r.groupdict()
+        # init city
         city = self.City(city_attrs)
+        # add city to the game index
         self.city_index[city_attrs['city_name']] = city
         return city
 
@@ -103,19 +131,51 @@ class Game(object):
         for city in self.cities:
             print city.to_output()
 
+    def check_game_ending_conditions(self):
+        if not len(self.monsters):
+            if not len(self.cities):
+                print "Success! All cities have been destroyed!"
+            else:
+                print "All you monsters have died.Your plans for world domination have been postponed."
+            return True
+        return False
+
+
+    def destroy_city(self, city):
+        print "%s has been destroyed by monsters %s" % (city.name, city.get_pretty_occupants())
+        pass
+
     def run(self):
         for tick in range(0, self.ROUND_LIMIT):
-            pass
+            if self.check_game_ending_conditions():
+                return
+
+            cities_to_destroy = filter(city_condition_filter, self.cities)
+            for city in cities_to_destroy:
+                self.destroy_city(city)
 
 
+# Utils
+def city_condition_filter(city):
+    return city.is_overcome
+
+
+# Main
 if __name__ == '__main__':
-    # todo add argparse
-    # todo get num monsters
+    # argument parsing
+    parser = argparse.ArgumentParser(description='Evil overlord sends monsters to eat cities')
+    parser.add_argument('monsters', action="store", type=int, help="Number of monsters")
+    args = parser.parse_args()
+
+    if args.monsters < 2:
+        print "You need at least 2 monsters to be able to destroy any cities."
+        sys.exit()
+
 
     # Get set
     game = Game()
     game.populate_map()
-    game.deploy_monsters(Game.NUM_MONSTERS)
+    game.deploy_monsters(args.monsters)
 
     # GO!
     game.run()
