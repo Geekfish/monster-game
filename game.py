@@ -3,6 +3,8 @@ import re, random, argparse, sys
 class Game(object):
     DEFAULT_DATA_FILE = 'data/world_map_small.txt'
     ROUND_LIMIT = 10000
+    WON, LOST, UNDECIDED = 'won', 'lost', 'undecided'
+
 
     class Monster(object):
         def __init__(self, ref, starting_city):
@@ -89,10 +91,12 @@ class Game(object):
             return self.name
 
 
-    def __init__(self, data_file=DEFAULT_DATA_FILE):
-        self.data_file = data_file
+    def __init__(self, data_file=None):
+        self.data_file = data_file if data_file else Game.DEFAULT_DATA_FILE
         self.city_index = {}
         self.monsters = []
+        self.current_turn = 0
+        self.status = self.UNDECIDED
 
     def _get_world_file_data(self):
         f = open(self.data_file, 'r')
@@ -127,21 +131,28 @@ class Game(object):
             self.monsters.append(Game.Monster(i, random_city))
 
     def show_result(self):
-        print '==================='
-        print ' Remaining cities  '
-        print '==================='
-        for city in self.cities:
-            print city.to_output(self.city_index)
+        if self.status == self.WON:
+            print " *** Success! All cities have been destroyed!"
+        else:
+            print '==================='
+            print ' Remaining cities  '
+            print '==================='
+            for city in self.cities:
+                print city.to_output(self.city_index)
+
+            if self.status == self.LOST:
+                print " *** All you monsters have died.Your plans for world domination have been postponed."
+            else:
+                print " *** Your monsters are all blocked, you might want to rebuild those roads and start again..."
 
     def check_game_ending_conditions(self):
         if not len(self.monsters):
             if not len(self.city_index.keys()):
-                print " *** Success! All cities have been destroyed!"
+                self.status = self.WON
             else:
-                print " *** All you monsters have died.Your plans for world domination have been postponed."
+                self.status = self.LOST
             return True
         return False
-
 
     def destroy_city(self, city):
         print "[turn %d] %s has been destroyed by monsters %s" % (self.current_turn, city.name, city.get_pretty_occupants())
@@ -163,9 +174,6 @@ class Game(object):
 
             for monster in self.monsters:
                 monster.move()
-
-            if tick == self.ROUND_LIMIT - 1:
-                print " *** Your monsters are all blocked, you might need to rebuild those roads and start again..."
 
 
 # Utils

@@ -1,5 +1,5 @@
-Design Assumptions
-==================
+Assumptions
+===========
 
 * Observing the structure of provided world data files, the parser assumes neighbouring cities are always provided in the following order: north, south, east, west.
 

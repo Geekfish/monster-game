@@ -4,9 +4,13 @@ from hamcrest import *
 
 from game import Game
 
+def is_not_in(collection):
+    return not is_in(collection)
+
+
 class TestGameFunctions(unittest.TestCase):
     def setUp(self):
-        Game.DATA_FILE = 'data/world_test.txt'
+        Game.DEFAULT_DATA_FILE = 'data/world_test.txt'
 
     def test_get_world_file_data(self):
         game = Game()
@@ -78,6 +82,22 @@ class TestGameFunctions(unittest.TestCase):
             total_occupants += len(city.occupants)
 
         assert_that(total_occupants, is_(10))
+
+    def test_city_destroy(self):
+        game = Game()
+        game.populate_map()
+
+        city = game.cities[0]
+        game.monsters.append(Game.Monster(1, city))
+        game.monsters.append(Game.Monster(2, city))
+
+        game.destroy_city(city)
+
+        assert_that(len(game.monsters), is_(0))
+        assert_that(city, is_not_in(game.cities))
+        assert_that(city.name, is_not_in(game.city_index.keys()))
+
+
 
     def test_check_game_ending_conditions(self):
         game = Game()
