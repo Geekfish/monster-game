@@ -1,6 +1,9 @@
 Monster Game
 ============
 
+Usage
+-----
+
 Example usage::
   
 	# usage: game.py [-h] [-f DATAFILE] monsters
@@ -13,3 +16,15 @@ Example usage::
 
 
 Please run `python game.py -h` for argument description.
+
+
+Docs
+----
+
+Assumptions are contained in docs/assumptions.rst
+
+
+Tests
+-----
+
+Running tests require the packages contained in `test_requirements.txt`
